@@ -11,8 +11,8 @@
     "build:mac-dmg": "./scripts/build_manual_mac_arm64.sh",
     "build:mac-arm64-manual": "./scripts/build_manual_mac_arm64.sh",
     "build:win-x64": "electron-builder --win zip --x64",
-    "build:win-installer": "electron-builder --win nsis --x64",
-    "build:win-release": "electron-builder --win nsis zip --x64",
+    "build:win-installer": "electron-builder --win nsis --x64 --publish never",
+    "build:win-release": "electron-builder --win nsis zip --x64 --publish never",
     "release": ""
   },
   "build": {
