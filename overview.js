@@ -4,12 +4,25 @@ const {ipcRenderer} = require('electron')
 
 let localinfo
 
+function formatPercent(part, total) {
+  if (total === 0) {
+    return '0.0%'
+  }
+  return `${(100 * part / total).toFixed(1)}%`
+}
+
+function formatDuration(seconds) {
+  return `${Math.floor(seconds / 3600)} hours, ${Math.floor((seconds % 3600) / 60)} minutes, ${Math.floor(seconds % 60)} seconds`
+}
+
 $('#navbtn-newblock').click(function() {
   ipcRenderer.send('navto-newblock')
 })
+
 $('#navbtn-prevblocks').click(function() {
   ipcRenderer.send('navto-prevblocks')
 })
+
 $('#btn-back').click(function() {
   ipcRenderer.send('navto-index')
 })
@@ -18,50 +31,63 @@ $('#btn-resetqbank').click(function() {
   ipcRenderer.send('resetqbank')
 })
 
-ipcRenderer.on('qbankinfo', function (event, qbankinfo) {
-
+ipcRenderer.on('qbankinfo', function(event, qbankinfo) {
   localinfo = qbankinfo
 
-  numblocks = Object.keys(qbankinfo.progress.blockhist).length
-  numcorrect = 0
-  totalanswered = 0
-  completeblocks = 0
-  pausedblocks = 0
-  totaltime = 0
-  for(const i of Object.keys(localinfo.progress.blockhist)) {
-    thisblock = qbankinfo.progress.blockhist[i]
-    if(thisblock.complete) {
+  let numcorrect = 0
+  let totalanswered = 0
+  let completeblocks = 0
+  let pausedblocks = 0
+  let totaltime = 0
+  let tutorblocks = 0
+  let timedblocks = 0
+  let untimedblocks = 0
+
+  for (const i of Object.keys(localinfo.progress.blockhist)) {
+    const thisblock = localinfo.progress.blockhist[i]
+    if (thisblock.mode === 'timed') {
+      timedblocks += 1
+    } else if (thisblock.mode === 'untimed') {
+      untimedblocks += 1
+    } else {
+      tutorblocks += 1
+    }
+
+    if (thisblock.complete) {
       completeblocks += 1
       totalanswered += thisblock.blockqlist.length
       numcorrect += thisblock.numcorrect
       totaltime += thisblock.elapsedtime
     } else {
-      pausedblocks +=1
+      pausedblocks += 1
     }
   }
-  numincorrect = totalanswered - numcorrect
-  avgtime = totaltime / totalanswered
 
-  numunused = 0
-  numall = 0
-  numflagged = 0
-  i = localinfo.tagnames.tagnames[0]
-  for (const j in localinfo.progress.tagbuckets[i]) {
-    numunused += localinfo.progress.tagbuckets[i][j].unused.length
-    numall += localinfo.progress.tagbuckets[i][j].all.length
-    numflagged += localinfo.progress.tagbuckets[i][j].flagged.length
+  const numincorrect = totalanswered - numcorrect
+  const avgtime = totalanswered === 0 ? 0 : totaltime / totalanswered
+
+  let numunused = 0
+  let numall = 0
+  let numflagged = 0
+  const primaryTag = localinfo.tagnames.tagnames[0]
+  for (const j in localinfo.progress.tagbuckets[primaryTag]) {
+    numunused += localinfo.progress.tagbuckets[primaryTag][j].unused.length
+    numall += localinfo.progress.tagbuckets[primaryTag][j].all.length
+    numflagged += localinfo.progress.tagbuckets[primaryTag][j].flagged.length
   }
-  numseen = numall - numunused
+  const numseen = numall - numunused
 
-  $('#stat-correct').text(`${numcorrect} (${(100*numcorrect/totalanswered).toFixed(1)}%)`)
-  $('#stat-incorrect').text(`${numincorrect} (${(100*numincorrect/totalanswered).toFixed(1)}%)`)
+  $('#stat-correct').text(`${numcorrect} (${formatPercent(numcorrect, totalanswered)})`)
+  $('#stat-incorrect').text(`${numincorrect} (${formatPercent(numincorrect, totalanswered)})`)
   $('#stat-totalans').text(`${totalanswered}`)
-  $('#stat-used').text(`${numseen}/${numall} (${(100*numseen/numall).toFixed(1)}%)`)
-  $('#stat-flagged').text(`${numflagged}/${numseen} (${(100*numflagged/numseen).toFixed(1)}%)`)
+  $('#stat-used').text(`${numseen}/${numall} (${formatPercent(numseen, numall)})`)
+  $('#stat-flagged').text(`${numflagged}/${numseen || 0} (${formatPercent(numflagged, numseen)})`)
   $('#stat-totalqs').text(numall)
   $('#stat-completeblocks').text(completeblocks)
   $('#stat-pausedblocks').text(pausedblocks)
+  $('#stat-tutorblocks').text(tutorblocks)
+  $('#stat-timedblocks').text(timedblocks)
+  $('#stat-untimedblocks').text(untimedblocks)
   $('#stat-avgtime').text(`${avgtime.toFixed(1)} sec`)
-  $('#stat-totaltime').text(`${Math.floor( totaltime / 3600 )} hours, ${Math.floor( (totaltime%3600)/60 )} minutes, ${Math.floor( totaltime%60 )} seconds`)
-
+  $('#stat-totaltime').text(formatDuration(totaltime))
 })

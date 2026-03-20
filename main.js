@@ -55,7 +55,101 @@ ipcMain.on("answerselect", (e)=>{
 
 
 if (store.has('folderpaths')) {
-  folderpaths = (store.get(folderpaths))['folderpaths']
+  folderpaths = store.get('folderpaths')
+}
+
+function deriveBlockMode(block) {
+  if (block.mode) {
+    return block.mode
+  }
+  if (block.timelimit !== undefined && block.timelimit !== -1) {
+    return 'timed'
+  }
+  if (block.showans) {
+    return 'tutor'
+  }
+  return 'untimed'
+}
+
+function normalizeBlockRecord(block) {
+  const normalized = Object.assign({}, block)
+  const blockqlist = Array.isArray(normalized.blockqlist) ? normalized.blockqlist : []
+  const answers = Array.isArray(normalized.answers) ? normalized.answers.slice(0, blockqlist.length) : []
+  while (answers.length < blockqlist.length) {
+    answers.push('')
+  }
+
+  const highlights = Array.isArray(normalized.highlights) ? normalized.highlights.slice(0, blockqlist.length) : []
+  while (highlights.length < blockqlist.length) {
+    highlights.push('[]')
+  }
+
+  const mode = deriveBlockMode(normalized)
+  const questionStates = Array.isArray(normalized.questionStates) ? normalized.questionStates.slice(0, blockqlist.length) : []
+  while (questionStates.length < blockqlist.length) {
+    questionStates.push({})
+  }
+
+  const resolvedQuestionStates = questionStates.map(function(state, index) {
+    const answer = answers[index]
+    const correctChoice = qbankinfo.choices && qbankinfo.choices[blockqlist[index]] ? qbankinfo.choices[blockqlist[index]].correct : ''
+    const submitted = state.submitted !== undefined ? state.submitted : answer !== ''
+    const revealedDefault = normalized.complete || (mode === 'tutor' && submitted)
+    const revealed = state.revealed !== undefined ? state.revealed : revealedDefault
+    const correct = state.correct !== undefined ? state.correct : (answer !== '' && answer === correctChoice)
+    const eliminatedChoices = Array.isArray(state.eliminatedChoices) ? state.eliminatedChoices : []
+    return {
+      submitted: submitted,
+      revealed: revealed,
+      correct: correct,
+      eliminatedChoices: eliminatedChoices
+    }
+  })
+
+  normalized.answers = answers
+  normalized.highlights = highlights
+  normalized.mode = mode
+  normalized.questionStates = resolvedQuestionStates
+  normalized.reviewLayout = normalized.reviewLayout || 'split'
+  normalized.showans = normalized.showans !== undefined ? normalized.showans : (mode === 'tutor')
+  normalized.timelimit = normalized.timelimit !== undefined ? normalized.timelimit : (mode === 'timed' ? 0 : -1)
+  normalized.elapsedtime = normalized.elapsedtime || 0
+  normalized.numcorrect = normalized.numcorrect || 0
+  normalized.currentquesnum = normalized.currentquesnum || 0
+  normalized.complete = Boolean(normalized.complete)
+  return normalized
+}
+
+function normalizeProgress() {
+  if (!qbankinfo.progress.blockhist) {
+    qbankinfo.progress.blockhist = {}
+  }
+  if (!qbankinfo.progress.tagbuckets) {
+    qbankinfo.progress.tagbuckets = {}
+  }
+  for (const blockKey of Object.keys(qbankinfo.progress.blockhist)) {
+    qbankinfo.progress.blockhist[blockKey] = normalizeBlockRecord(qbankinfo.progress.blockhist[blockKey])
+  }
+}
+
+function getNextBlockKey() {
+  const keys = Object.keys(qbankinfo.progress.blockhist)
+  if (keys.length === 0) {
+    return '0'
+  }
+  const maxKey = Math.max.apply(null, keys.map(function(key) { return parseInt(key, 10) }))
+  return (maxKey + 1).toString()
+}
+
+function saveProgressToDisk(callback) {
+  fs.writeFile(currentpath + '/progress.json', JSON.stringify(qbankinfo.progress), (err) => {
+    if (err) {
+      console.log(err)
+    }
+    if (callback) {
+      callback(err)
+    }
+  })
 }
 
 
@@ -378,6 +472,8 @@ function loadFolderInfo() {
     })
   }
 
+  normalizeProgress()
+
 }
 
 function loadqbank() {
@@ -470,25 +566,36 @@ ipcMain.on("startblock", (e, blockqlist)=>{
     }
   }
 
-  newblockkey = Object.keys(qbankinfo.progress.blockhist).length.toString()
+  newblockkey = getNextBlockKey()
+  const mode = store.get('mode-setting') || 'tutor'
   timelimit = -1
-  if(store.get('timed-setting')) {
+  if(mode === 'timed') {
     timelimit = parseInt(store.get('timeperq-setting')) * blockqlist.length
   }
   qbankinfo.progress.blockhist[newblockkey] = {
     'blockqlist': blockqlist,
     'answers': Array(blockqlist.length).fill(''),
     'highlights': Array(blockqlist.length).fill('[]'),
+    'questionStates': Array(blockqlist.length).fill(null).map(function() {
+      return {
+        submitted: false,
+        revealed: false,
+        correct: false,
+        eliminatedChoices: []
+      }
+    }),
     'complete': false,
     'timelimit': timelimit,
     'elapsedtime': 0,
     'numcorrect': 0,
+    'mode': mode,
     'qpoolstr': qpoolSettingEquiv[store.get('qpool-setting')],
     'tagschosenstr': store.get('recent-tagschosenstr'),
     'allsubtagsenabled': store.get('recent-allsubtagsenabled'),
     'starttime': (new Date()).toLocaleString(),
     'currentquesnum': 0,
-    'showans': store.get('showans-setting')
+    'showans': mode === 'tutor',
+    'reviewLayout': 'split'
   }
   qbankinfo.blockToOpen = newblockkey
   win.loadFile('examview.html')
@@ -498,13 +605,10 @@ ipcMain.on("startblock", (e, blockqlist)=>{
 
 ipcMain.on("pauseblock", (e, progress)=>{
   qbankinfo.progress = progress
-  fs.writeFile(currentpath + '/progress.json', JSON.stringify(qbankinfo.progress), (err) => {
-    if(err) {
-      console.log(err)
-    } else {
-      if(doiquit) {
-        appquit()
-      }
+  normalizeProgress()
+  saveProgressToDisk((err) => {
+    if(!err && doiquit) {
+      appquit()
     }
   })
 
@@ -518,6 +622,12 @@ ipcMain.on("pauseblock", (e, progress)=>{
     setTimeout(clearblocktoopen, 500)
   }
 
+})
+
+ipcMain.on("saveprogress", (e, progress)=>{
+  qbankinfo.progress = progress
+  normalizeProgress()
+  saveProgressToDisk()
 })
 
 ipcMain.on("openblock", (e, thiskey)=>{
@@ -539,10 +649,7 @@ ipcMain.on("deleteblock", (e, thiskey)=>{
     addToBucket(thisqid, 'unused')
   }
   delete qbankinfo.progress.blockhist[thiskey]
-  fs.writeFile(currentpath + '/progress.json', JSON.stringify(qbankinfo.progress), (err) => {
-       if(err)
-          console.log(err)
-  })
+  saveProgressToDisk()
 })
 
 
