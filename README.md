@@ -41,6 +41,25 @@ Older Quail progress files are normalized on load so legacy sessions remain read
 
 Use the Apple Silicon release `dmg` for the normal installer-style path, or the `zip` if you want the raw app bundle. The packaged app has a separate bundle ID and user-data path from original Quail, so both apps can live on the same Mac.
 
+Because current public releases are unsigned, macOS may block first launch.
+
+Recommended first-launch path:
+
+1. Open the `.dmg` and drag `Quail Ultra.app` into `Applications`.
+2. In Finder, open `Applications`.
+3. Right-click `Quail Ultra.app` and choose `Open`.
+4. Click `Open` again in the warning dialog.
+
+If macOS still blocks the app, go to `System Settings -> Privacy & Security`, scroll to the security section, and click `Open Anyway` for Quail Ultra.
+
+Terminal fallback:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Quail Ultra.app"
+```
+
+Then launch the app again from `Applications`.
+
 ### Windows
 
 Windows builds are published as alpha artifacts. Prefer the `exe` installer. A `zip` may also be included for fallback/debug use.
