@@ -13,6 +13,9 @@ PLIST_PATH="$APP_DIR/Contents/Info.plist"
 ZIP_PATH="$ROOT_DIR/dist/$APP_NAME-$APP_VERSION-arm64.zip"
 DMG_STAGE_DIR="$ROOT_DIR/dist/manual-mac-arm64/dmg-stage"
 DMG_PATH="$ROOT_DIR/dist/$APP_NAME-$APP_VERSION-arm64.dmg"
+ZIP_STAGE_DIR="$ROOT_DIR/dist/manual-mac-arm64/zip-stage"
+PACKAGE_README_SOURCE="$ROOT_DIR/RELEASE_PACKAGE_README.txt"
+PACKAGE_README_NAME="$APP_NAME Read Me.txt"
 
 python3 "$ROOT_DIR/scripts/prepare_quail_ultra_icon.py"
 
@@ -58,12 +61,17 @@ mv "$APP_DIR/Contents/MacOS/Electron" "$APP_DIR/Contents/MacOS/$APP_NAME"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $APP_ID" "$PLIST_PATH"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIconFile quail-ultra" "$PLIST_PATH"
 
+rm -rf "$ZIP_STAGE_DIR"
+mkdir -p "$ZIP_STAGE_DIR"
+cp -R "$APP_DIR" "$ZIP_STAGE_DIR/"
+cp "$PACKAGE_README_SOURCE" "$ZIP_STAGE_DIR/$PACKAGE_README_NAME"
 rm -f "$ZIP_PATH"
-ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$ZIP_PATH"
+ditto -c -k --sequesterRsrc --keepParent "$ZIP_STAGE_DIR" "$ZIP_PATH"
 
 rm -rf "$DMG_STAGE_DIR"
 mkdir -p "$DMG_STAGE_DIR"
 cp -R "$APP_DIR" "$DMG_STAGE_DIR/"
+cp "$PACKAGE_README_SOURCE" "$DMG_STAGE_DIR/$PACKAGE_README_NAME"
 ln -s /Applications "$DMG_STAGE_DIR/Applications"
 rm -f "$DMG_PATH"
 hdiutil create \

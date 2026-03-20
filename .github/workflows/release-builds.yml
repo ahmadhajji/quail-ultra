@@ -64,6 +64,15 @@ jobs:
       - name: Build Windows release artifacts
         run: npm run build:win-release
 
+      - name: Create Windows bundle with read me
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          New-Item -ItemType Directory -Force -Path "dist/release-bundle" | Out-Null
+          Copy-Item "RELEASE_PACKAGE_README.txt" "dist/release-bundle/Quail Ultra Read Me.txt"
+          Copy-Item "dist/Quail Ultra-$version-setup.exe" "dist/release-bundle/"
+          Compress-Archive -Path "dist/release-bundle/*" -DestinationPath "dist/Quail Ultra-$version-windows-bundle.zip" -Force
+
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
