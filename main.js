@@ -7,7 +7,12 @@ const sanitizeHtml = require('sanitize-html')
 const url = require('url')
 const { v4: uuidv4 } = require('uuid')
 const axios = require('axios').default
-const store = new Store();
+
+const APP_NAME = 'Quail Ultra'
+app.setName(APP_NAME)
+app.setPath('userData', path.join(app.getPath('appData'), APP_NAME))
+
+const store = new Store({ cwd: app.getPath('userData'), name: 'preferences' });
 Store.initRenderer();
 
 
@@ -166,7 +171,7 @@ function createWindow () {
     }
   })
 
-  win.setTitle('Quail')
+  win.setTitle(APP_NAME)
   sendinfo = function() {
     win.webContents.send('folderpaths', folderpaths)
   }
@@ -483,7 +488,7 @@ function loadqbank() {
     win.webContents.send('qbankinfo', qbankinfo)
     split = url.pathToFileURL(currentpath).toString().split('/')
     foldername = decodeURIComponent(split[split.length-1])
-    win.setTitle(`Quail - ${foldername}`)
+    win.setTitle(`${APP_NAME} - ${foldername}`)
   }
 
   win.loadFile('overview.html')
@@ -526,7 +531,7 @@ ipcMain.on("navto-index", (e)=>{
     win.webContents.send('folderpaths', folderpaths)
   }
   win.loadFile('index.html')
-  win.setTitle(`Quail`)
+  win.setTitle(APP_NAME)
   gaPageview('index')
 })
 

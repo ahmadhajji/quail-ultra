@@ -1,32 +1,53 @@
 {
-  "name": "Quail",
-  "version": "0.1.14",
-  "description": "Question Bank Browser",
+  "name": "quail-ultra",
+  "version": "0.9.0-beta.1",
+  "description": "UWorld-style desktop question bank browser built on Quail",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "postinstall": "electron-builder install-app-deps",
-    "build": "",
+    "build": "electron-builder",
+    "build:mac-arm64": "electron-builder --mac dmg zip --arm64",
+    "build:mac-arm64-manual": "./scripts/build_manual_mac_arm64.sh",
+    "build:win-x64": "electron-builder --win zip --x64",
     "release": ""
   },
   "build": {
-    "appId": "TheDabblingDuck.quail",
-    "productName": "Quail",
+    "appId": "com.ahmadhajji.quailultra",
+    "productName": "Quail Ultra",
+    "artifactName": "${productName}-${version}-${arch}.${ext}",
     "mac": {
-      "category": "public.app-category.education"
+      "category": "public.app-category.education",
+      "icon": "branding/quail-ultra.icns",
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "dmg": {
-      "icon": "quail.icns"
+      "icon": "branding/quail-ultra.icns"
     },
     "linux": {
       "target": [
         "AppImage"
       ],
+      "icon": "branding/quail-ultra.png",
       "category": "Education"
+    },
+    "win": {
+      "icon": "branding/quail-ultra.ico"
     }
   },
   "keywords": [],
-  "author": "TheDabblingDuck",
+  "author": "Ahmad Hajji",
+  "homepage": "https://github.com/ahmadhajji/quail-ultra",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmadhajji/quail-ultra.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ahmadhajji/quail-ultra/issues"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron": "^12.0.7",

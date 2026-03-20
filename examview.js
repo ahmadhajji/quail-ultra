@@ -155,27 +155,13 @@ function syncQuestionState(index) {
 
 function renderHeader() {
   $('#modeChip')
-    .text(modeLabel(block.mode))
+    .text(modeLabel(block.mode).toUpperCase())
     .removeClass('mode-tutor mode-timed mode-untimed')
     .addClass(`mode-${block.mode}`)
 
-  $('#blockChip').text(`Block ${parseInt(blockKey, 10) + 1}`)
-  $('#reviewChip').text(block.complete ? 'Review Mode' : 'In Progress')
-  $('#examTitle').text(block.complete ? 'Completed Review Block' : `${modeLabel(block.mode)} Block`)
-
-  let subtitle = 'Question-by-question review with the stem and explanation in one continuous page.'
-  if (block.mode === 'timed' && !block.complete) {
-    subtitle = 'Explanations stay hidden until the block ends.'
-  } else if (block.mode === 'untimed' && !block.complete) {
-    subtitle = 'No timer. Explanations stay hidden until you end the block.'
-  } else if (block.mode === 'tutor' && !block.complete) {
-    subtitle = 'Submit to lock the answer and reveal the explanation immediately.'
-  } else if (block.complete) {
-    subtitle = 'Review mode preserves flagged, correct, and incorrect states.'
-  }
-  $('#examSubtitle').text(subtitle)
-  $('#btn-close').text(block.complete ? 'Back to Blocks' : 'End Block')
-  $('#btn-pause').toggleClass('exam-hidden', block.complete)
+  const isReview = block.complete
+  $('#btn-close span').text(isReview ? 'Back' : 'End Block')
+  $('#btn-pause').toggleClass('exam-hidden', isReview)
 }
 
 function renderQuestionList() {
@@ -232,19 +218,8 @@ function setQuestionStatePill(cssClass, text) {
 }
 
 function renderQuestionMeta() {
-  const state = currentState()
-  $('#questionHeading').text(`Question ${selectedQnum + 1}`)
-  $('#questionMeta').text(`Item ${selectedQnum + 1} of ${numQuestions} • ID ${qid}`)
-
-  if (block.complete) {
-    setQuestionStatePill(state.correct ? 'correct' : 'incorrect', state.correct ? 'Correct' : 'Incorrect')
-  } else if (block.mode === 'tutor' && state.revealed) {
-    setQuestionStatePill(state.correct ? 'correct' : 'incorrect', state.correct ? 'Correct answer submitted' : 'Incorrect answer submitted')
-  } else if (currentAnswer() !== '') {
-    setQuestionStatePill('answered', block.mode === 'tutor' ? 'Answer selected' : 'Answer recorded')
-  } else {
-    setQuestionStatePill('awaiting', 'Awaiting answer')
-  }
+  $('#questionMetaTop').text(`Item ${selectedQnum + 1} of ${numQuestions}`)
+  $('#questionIdTop').text(`Question Id: ${qid}`)
 }
 
 function renderExplanationMeta() {

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This fork keeps Quail's original desktop Electron architecture and BYO question-bank format, but reshapes the product around a more UWorld-like USMLE solving flow.
+Quail Ultra keeps Quail's original desktop Electron architecture and BYO question-bank format, but reshapes the product around a more UWorld-like USMLE solving flow.
 
 The current branch goal is:
 
@@ -13,12 +13,12 @@ The current branch goal is:
 
 ## Current Branch
 
-- Fork: `ahmadhajji/quail`
+- Repo target: `ahmadhajji/quail-ultra`
 - Working branch: `codex/uworld-tutor-ui`
 
 ## Architecture
 
-Quail is still a local Electron app.
+Quail Ultra is still a local Electron app.
 
 - `main.js`
   Main Electron process, qbank loading, progress persistence, IPC handlers, window routing.
@@ -279,6 +279,13 @@ node --check newblock.js
 node --check examview.js
 node --check previousblocks.js
 node --check overview.js
+```
+
+Packaging:
+
+```bash
+npm run build:mac-arm64-manual
+npm run build:win-x64
 ```
 
 Manual smoke path:
