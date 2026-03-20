@@ -52,6 +52,8 @@ Recommended first-launch path:
 
 If macOS still blocks the app, go to `System Settings -> Privacy & Security`, scroll to the security section, and click `Open Anyway` for Quail Ultra.
 
+If macOS shows `"Quail Ultra.app" is damaged and can't be opened`, that is usually the quarantine check on an unsigned app, not actual file corruption.
+
 Terminal fallback:
 
 ```bash

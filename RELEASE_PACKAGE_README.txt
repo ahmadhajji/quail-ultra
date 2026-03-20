@@ -17,6 +17,8 @@ If macOS still blocks the app:
 3. Scroll down to the security section.
 4. Click Open Anyway for Quail Ultra.
 
+If macOS says "Quail Ultra.app" is damaged and can't be opened, that is usually the quarantine check on an unsigned app, not actual file corruption.
+
 Terminal fallback:
 xattr -dr com.apple.quarantine "/Applications/Quail Ultra.app"
 
