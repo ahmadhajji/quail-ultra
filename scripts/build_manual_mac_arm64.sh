@@ -11,6 +11,8 @@ APP_DIR="$ROOT_DIR/dist/manual-mac-arm64/$APP_NAME.app"
 RESOURCES_DIR="$APP_DIR/Contents/Resources"
 PLIST_PATH="$APP_DIR/Contents/Info.plist"
 ZIP_PATH="$ROOT_DIR/dist/$APP_NAME-$APP_VERSION-arm64.zip"
+DMG_STAGE_DIR="$ROOT_DIR/dist/manual-mac-arm64/dmg-stage"
+DMG_PATH="$ROOT_DIR/dist/$APP_NAME-$APP_VERSION-arm64.dmg"
 
 python3 "$ROOT_DIR/scripts/prepare_quail_ultra_icon.py"
 
@@ -59,5 +61,18 @@ mv "$APP_DIR/Contents/MacOS/Electron" "$APP_DIR/Contents/MacOS/$APP_NAME"
 rm -f "$ZIP_PATH"
 ditto -c -k --sequesterRsrc --keepParent "$APP_DIR" "$ZIP_PATH"
 
+rm -rf "$DMG_STAGE_DIR"
+mkdir -p "$DMG_STAGE_DIR"
+cp -R "$APP_DIR" "$DMG_STAGE_DIR/"
+ln -s /Applications "$DMG_STAGE_DIR/Applications"
+rm -f "$DMG_PATH"
+hdiutil create \
+  -volname "$APP_NAME" \
+  -srcfolder "$DMG_STAGE_DIR" \
+  -ov \
+  -format UDZO \
+  "$DMG_PATH" >/dev/null
+
 echo "Built $APP_DIR"
 echo "Built $ZIP_PATH"
+echo "Built $DMG_PATH"
